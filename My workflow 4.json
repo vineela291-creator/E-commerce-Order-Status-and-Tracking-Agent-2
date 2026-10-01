@@ -1,0 +1,231 @@
+{
+  "name": "My workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "Your job is to return only and only order ID, from the user prompt"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d0e4d692-0f0d-4118-a91e-9da92c3d156f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMinimax",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        144
+      ],
+      "id": "91199c37-7aa9-4f82-a6ad-19a9721a7b52",
+      "name": "MiniMax Chat Model",
+      "credentials": {
+        "minimaxApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1c292OVRyd2OwIkVQVwYOgCmCva9Iuev3JZn6_Xc2OJ8",
+          "mode": "list",
+          "cachedResultName": "e-commerce",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1c292OVRyd2OwIkVQVwYOgCmCva9Iuev3JZn6_Xc2OJ8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1c292OVRyd2OwIkVQVwYOgCmCva9Iuev3JZn6_Xc2OJ8/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Order_ID",
+              "lookupValue": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        0
+      ],
+      "id": "311abb45-a635-4cc7-84ee-17eb479d8134",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FGTsRSWH1J9dZbv6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "MiniMax-M3"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.Order_ID }} , {{ $json.Customer_name }} , {{ $json.Product }} , {{ $json.Location }}, {{ $json.Status }} , {{ $json.Expected_delivery }} .\nAbove is the order status of user , generate a message explaining the order status in a short and profrssional message.\ndo not add into and concluding text."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.minimax",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        0
+      ],
+      "id": "6a10f046-900e-4b07-b527-68849e121dd6",
+      "name": "Message a model",
+      "credentials": {
+        "minimaxApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "1fada8a4-8579-435b-8a8c-d33a5f9a42cb",
+      "name": "Telegram Trigger",
+      "webhookId": "0995255f-dcbd-49a1-aacd-a8e2e1e16461",
+      "credentials": {
+        "telegramApi": {
+          "id": "UZrarVYkrgaj0YbY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $json.content }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "521aa48a-db5c-4b1d-be9b-9e5fb309f305",
+      "name": "Send a text message",
+      "webhookId": "67a86d71-d7eb-451d-93ed-8584263d32d9",
+      "credentials": {
+        "telegramApi": {
+          "id": "UZrarVYkrgaj0YbY",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MiniMax Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a9fa3e70-fd04-4fe3-9cce-08c8144d6ac0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6a8230ad3c5c3f35fd1baf4687c5dbeb587ee2993fbc3f13aaace927a5b8d833"
+  },
+  "nodeGroups": [],
+  "id": "HhZr8P4o2OYnrIdf",
+  "tags": []
+}
